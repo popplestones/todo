@@ -7,13 +7,13 @@
   },
   "package": {
     "productName": "todo",
-    "version": "0.0.0"
+    "version": "0.0.1"
   },
   "tauri": {
     "updater": {
       "active": true,
       "endpoints": [
-        "https://gist.githubusercontent.com/popplestones/fa010b5d54462d375a5dc442a92d9f8b/raw/cd4ad97030d7a03b2394ccb65b4165ad1fb02a05/update.json"
+        "https://gist.githubusercontent.com/popplestones/fa010b5d54462d375a5dc442a92d9f8b/raw/update.json"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM1NEMxNTIzRDJERDlEQzQKUldURW5kM1NJeFZNeFpZUThSbnBqSC9NdU4rRTAzWkZPT09nNUhySW5iRUVyR29kRXF6eG5pamoK"
