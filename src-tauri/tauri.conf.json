@@ -20,6 +20,11 @@
     },
     "allowlist": {
       "all": false,
+      "http": {
+        "all": true,
+        "request": true,
+        "scope": ["https://todo.popplestones.au/*"]
+      },
       "shell": {
         "all": false,
         "open": true
@@ -29,7 +34,7 @@
       {
         "title": "todo",
         "width": 800,
-        "height": 600
+        "height": 800
       }
     ],
     "security": {
