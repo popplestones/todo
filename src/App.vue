@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/tauri";
-import { computed, onMounted, ref, watchEffect } from "vue";
+import { computed, onMounted, ref } from "vue";
 import LoginForm from "./components/LoginForm.vue";
 import Notification from "./components/Notification.vue";
 import RegisterForm from "./components/RegisterForm.vue";
@@ -37,10 +37,6 @@ const showTasks = computed(() => {
 });
 
 const { verifyToken, state, logout } = useAuth();
-
-watchEffect(() => {
-  console.log("isLoggedIn:", state.isLoggedIn, "hasAccount:", hasAccount.value);
-});
 
 onMounted(async () => {
   appVersion.value = await getVersion();

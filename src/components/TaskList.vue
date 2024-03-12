@@ -5,13 +5,18 @@ import {
   TrashIcon,
   XCircleIcon,
 } from "@heroicons/vue/24/solid";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import usePagination from "../composables/usePagination.ts";
 import useTasks from "../composables/useTasks.ts";
-import { Task } from "../types/Task.ts";
+import { useValidation } from "../composables/useValidation.ts";
+import taskApi from "../services/api/taskApi.ts";
+import { ApiResponse, ErrorResponse } from "../types/ApiTypes.ts";
+import { Task, TaskForCreate } from "../types/Task.ts";
+import useTypeChecks from "../types/TypeChecks.ts";
+import TextInput from "./controls/TextInput.vue";
 
 const { options } = usePagination("tasks");
-const { tasks, loading } = useTasks(options);
+const { tasks, refresh } = useTasks(options);
 onMounted(() => {});
 
 const editing = ref<boolean>(false);
@@ -20,6 +25,11 @@ const editingTask = ref<Task | null>(null);
 const editTask = (task: Task) => {
   editing.value = true;
   editingTask.value = task;
+};
+
+const deleteTask = async (task: Task) => {
+  await taskApi.destroy(task.id);
+  await refresh();
 };
 
 const cancelEdit = () => {
@@ -33,13 +43,40 @@ const finishEdit = (_task: Task) => {
   editing.value = false;
 };
 
+const createInput = ref<InstanceType<typeof TextInput> | null>(null);
+
 const isEditing = (id: number) => {
   return !!(editingTask.value && editingTask.value.id === id);
 };
+const { isErrorResponse } = useTypeChecks();
+const { setError, errors: newTaskErrors, clearError } = useValidation();
+const newTaskName = ref<string>("");
+const createTask = async () => {
+  const taskForCreate: TaskForCreate = {
+    name: newTaskName.value,
+  };
+
+  const response = await taskApi.store(taskForCreate);
+
+  if (response) {
+    if (isErrorResponse(response.data)) {
+      const errorResponse = response as ApiResponse<ErrorResponse>;
+      setError(errorResponse.data.errors);
+      return;
+    }
+  }
+  newTaskName.value = "";
+  await refresh();
+  createInput.value?.focus();
+};
+
+watch(newTaskName, () => {
+  clearError();
+});
 </script>
 
 <template>
-  <div v-if="!loading" class="flex flex-col p-1 flex-1 overflow-hidden">
+  <div class="flex flex-col p-1 flex-1 overflow-hidden">
     <div class="bg-gray-900 py-4 flex flex-col">
       <h2
         class="px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8"
@@ -55,21 +92,41 @@ const isEditing = (id: number) => {
         <span class="p-2 border w-24 truncate text-center">F</span>
       </div>
     </div>
+    <div class="flex w-full py-2 text-sm border-b border-gray-700 pr-7 pl-2">
+      <span class="p-2 w-14">&nbsp;</span>
+      <span class="p-2 w-24">&nbsp;</span>
+      <div class="grow">
+        <form @submit.prevent="createTask">
+          <text-input
+            id="taskName"
+            ref="createInput"
+            v-model="newTaskName"
+            name="taskName"
+          />
+          <p
+            class="text-sm text-red-500 italic"
+            v-text="newTaskErrors.first('name')"
+          ></p>
+        </form>
+      </div>
+      <span class="p-2 w-24">&nbsp;</span>
+    </div>
+
     <div class="flex-grow flex flex-col overflow-y-auto pr-3 pl-2">
       <div
         v-for="task in tasks"
         class="flex w-full py-2 text-sm border-b border-gray-700"
       >
         <span
-          class="py-3 px-2 font-semibold border w-14 text-center truncate"
+          class="py-2 px-2 font-semibold border w-14 text-center truncate"
           v-text="task.id"
         />
-        <span class="py-3 px-2 border w-24 text-center">{{
+        <span class="py-2 px-2 border w-24 text-center">{{
           task.completed ? "X" : "-"
         }}</span>
-        <span class="py-3 px-2 border grow" v-text="task.name" />
+        <span class="py-2 px-2 border grow" v-text="task.name" />
         <span
-          class="py-3 px-2 border w-24 truncate text-center flex items-center space-x-2"
+          class="py-2 px-2 border w-24 truncate text-center flex items-center space-x-2"
         >
           <span v-if="isEditing(task.id)">
             <button title="Accept" @click="finishEdit(task)">
@@ -84,7 +141,7 @@ const isEditing = (id: number) => {
               <PencilSquareIcon class="w-5 h-5 text-amber-300" />
             </button>
 
-            <button title="Delete">
+            <button title="Delete" @click="deleteTask(task)">
               <TrashIcon class="w-5 h-5 text-red-400" />
             </button>
           </span>
@@ -93,22 +150,3 @@ const isEditing = (id: number) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Custom class for padding adjustment */
-.scrollbar-padding::-webkit-scrollbar {
-  width: 16px; /* Adjust based on your design/needs */
-}
-
-.scrollbar-padding {
-  padding-right: 16px; /* Extra padding to compensate for the scrollbar width */
-  overflow-y: scroll; /* Show scrollbar when necessary */
-}
-
-/* Adjust the padding dynamically if the scrollbar is not present */
-@media (hover: hover) {
-  .scrollbar-padding:hover {
-    padding-right: 0px;
-  }
-}
-</style>
