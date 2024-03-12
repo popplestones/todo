@@ -1,60 +1,114 @@
-<script setup lang="ts">
-
-import {onMounted} from "vue";
-import useTasks from "../composables/useTasks.ts";
+<script lang="ts" setup>
+import {
+  CheckCircleIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  XCircleIcon,
+} from "@heroicons/vue/24/solid";
+import { onMounted, ref } from "vue";
 import usePagination from "../composables/usePagination.ts";
-const {options} = usePagination("tasks");
-const {tasks, loading} = useTasks(options)
-onMounted(() => {
+import useTasks from "../composables/useTasks.ts";
+import { Task } from "../types/Task.ts";
 
-})
+const { options } = usePagination("tasks");
+const { tasks, loading } = useTasks(options);
+onMounted(() => {});
 
+const editing = ref<boolean>(false);
+const editingTask = ref<Task | null>(null);
+
+const editTask = (task: Task) => {
+  editing.value = true;
+  editingTask.value = task;
+};
+
+const cancelEdit = () => {
+  editing.value = false;
+  editingTask.value = null;
+};
+
+const finishEdit = (_task: Task) => {
+  // Save the task here...
+  editingTask.value = null;
+  editing.value = false;
+};
+
+const isEditing = (id: number) => {
+  return !!(editingTask.value && editingTask.value.id === id);
+};
 </script>
 
 <template>
-  <div v-if="!loading">
-      <div class="bg-gray-900 py-4">
-        <h2 class="px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8">Tasks</h2>
-        <table class="mt-6 w-full whitespace-nowrap text-left">
-          <colgroup>
-            <col class="w-full sm:w-4/12" />
-            <col class="lg:w-4/12" />
-            <col class="lg:w-2/12" />
-            <col class="lg:w-1/12" />
-          </colgroup>
-          <thead class="border-b border-white/10 text-sm leading-6 text-white">
-          <tr>
-            <th scope="col" class="py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8">Name</th>
-            <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold sm:table-cell">Description</th>
-            <th scope="col" class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20">Completed</th>
-            <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell lg:pr-20">Actions</th>
-          </tr>
-          </thead>
-          <tbody class="divide-y divide-white/5">
-          <tr v-for="(task, key) in tasks" :key="key">
-            <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
-              <div class="flex items-center gap-x-4">
-                <div class="truncate text-sm font-medium leading-6 text-white">{{ task.id }}</div>
-              </div>
-            </td>
-            <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
-              <div class="flex gap-x-3">
-                <div class="font-mono text-sm leading-6 text-gray-400">{{ task.name }}</div>
-                <div class="rounded-md bg-gray-700/40 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-white/10"></div>
-              </div>
-            </td>
-            <td class="py-4 pl-0 pr-4 text-sm leading-6 sm:pr-8 lg:pr-20">
-              <div class="flex items-center justify-end gap-x-2 sm:justify-start">
-              </div>
-            </td>
-            <td class="hidden py-4 pl-0 pr-8 text-sm leading-6 text-gray-400 md:table-cell lg:pr-20">{{ task.description }}</td>
-          </tr>
-          </tbody>
-        </table>
+  <div v-if="!loading" class="flex flex-col p-1 flex-1 overflow-hidden">
+    <div class="bg-gray-900 py-4 flex flex-col">
+      <h2
+        class="px-4 text-base font-semibold leading-7 text-white sm:px-6 lg:px-8"
+      >
+        Tasks
+      </h2>
+      <div
+        class="flex w-full py-2 text-sm font-semibold border-b border-gray-700 pl-2 pr-7"
+      >
+        <span class="p-2 border w-14 text-center">ID</span>
+        <span class="p-2 border w-24 text-center truncate">Completed</span>
+        <span class="p-2 border grow">Name</span>
+        <span class="p-2 border w-24 truncate text-center">F</span>
       </div>
+    </div>
+    <div class="flex-grow flex flex-col overflow-y-auto pr-3 pl-2">
+      <div
+        v-for="task in tasks"
+        class="flex w-full py-2 text-sm border-b border-gray-700"
+      >
+        <span
+          class="py-3 px-2 font-semibold border w-14 text-center truncate"
+          v-text="task.id"
+        />
+        <span class="py-3 px-2 border w-24 text-center">{{
+          task.completed ? "X" : "-"
+        }}</span>
+        <span class="py-3 px-2 border grow" v-text="task.name" />
+        <span
+          class="py-3 px-2 border w-24 truncate text-center flex items-center space-x-2"
+        >
+          <span v-if="isEditing(task.id)">
+            <button title="Accept" @click="finishEdit(task)">
+              <CheckCircleIcon class="w-5 h-5 text-green-400" />
+            </button>
+            <button title="Cancel" @click="cancelEdit">
+              <XCircleIcon class="w-5 h-5 text-red-400" />
+            </button>
+          </span>
+          <span v-else>
+            <button title="Edit" @click="editTask(task)">
+              <PencilSquareIcon class="w-5 h-5 text-amber-300" />
+            </button>
+
+            <button title="Delete">
+              <TrashIcon class="w-5 h-5 text-red-400" />
+            </button>
+          </span>
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* Custom class for padding adjustment */
+.scrollbar-padding::-webkit-scrollbar {
+  width: 16px; /* Adjust based on your design/needs */
+}
 
+.scrollbar-padding {
+  padding-right: 16px; /* Extra padding to compensate for the scrollbar width */
+  overflow-y: scroll; /* Show scrollbar when necessary */
+}
+
+/* Adjust the padding dynamically if the scrollbar is not present */
+@media (hover: hover) {
+  .scrollbar-padding:hover {
+    padding-right: 0px;
+  }
+}
 </style>
